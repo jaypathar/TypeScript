@@ -27,7 +27,7 @@ any1 = "string" //re-assigning value to string.
 console.log(any1)
 
 // declaring a  variable 'unknown1'.It is similar to any.
-let unknown1:unknown;;
+let unknown1:unknown;
 unknown1 = true // assigning 'true'-boolean.
 console.log(unknown1)
 unknown1 = 7 // assigning 'number'.
