@@ -1,3 +1,5 @@
+// importing module.
+import { v4 as uuid } from 'uuid';
 // defining interfaces.
 interface User {
     id: number;
@@ -14,7 +16,7 @@ interface Transaction {
 }
 
 interface Account {
-    id: number;
+    id: string;
     userId: number;
     balance: number;
 }
@@ -22,34 +24,29 @@ interface Account {
 // defining class for different operations
 class Bank {
     private users: User[] = [];
-    private transactions: Transaction[] = [];
-    private accounts: Account[] = [];
+    transactions: Transaction[] = [];
+    accounts: Account[] = [];
 
+    // creating a user
     createUser(user: User): void {
-        const newUser: User = {
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            password: user.password,
-        };
-        this.users.push(newUser);
+        this.users.push(user); // push directly into the array.
     }
 
+    // creating an account.
     createAccount(userId: number): void {
-        const newAccount: Account = {
-            id: this.accounts.length + 1,
-            userId,
-            balance: 0,
-        };
-        this.accounts.push(newAccount);
+        // generating unique id
+        const id: string = uuid();
+        this.accounts.push({ id: id, userId, balance: 0 });
     }
 
-
-    closeAccount(accountId: number): void {
-        const account = this.accounts.find(key => key.id === accountId);
-        if (account) {
+    // close  an account.
+    closeAccount(userId: number): void {
+        const accountIndex = this.accounts.findIndex(account => account.userId === userId);
+        if (accountIndex !== -1) {
+            const account = this.accounts[accountIndex];
             if (account.balance >= 0) {
-                console.log(`Account ID ${accountId} has been closed.`);
+                this.accounts.splice(accountIndex, 1);
+                console.log(`Account for User ID ${userId} has been closed.`);
             } else {
                 console.log("Account balance is negative. Account cannot be closed.");
             }
@@ -58,19 +55,20 @@ class Bank {
         }
     }
 
-
+    // to withdraw amount.
     withdraw(accountId: number, amount: number): void {
-        const account = this.accounts.find(key => key.id === accountId);
+        const account = this.accounts.find(account => account.userId === accountId);
         if (account) {
             if (account.balance >= amount) {
                 account.balance -= amount;
-                const transaction: Transaction = {
+
+                this.transactions.push({
                     id: this.transactions.length + 1,
                     userId: account.userId,
                     amount,
                     type: 'withdrawal',
-                };
-                this.transactions.push(transaction);
+                })
+                console.log(`$Account :${account.id} userID : ${account.userId} Balance: ${account.balance}`)
             } else {
                 console.log("Insufficient balance");
             }
@@ -79,24 +77,24 @@ class Bank {
         }
     }
 
-
+    // to  deposit into account.
     deposit(accountId: number, amount: number): void {
-        const account = this.accounts.find(key => key.id === accountId);
+        const account = this.accounts.find(account => account.userId === accountId);
         if (account) {
             account.balance += amount;
-            const transaction: Transaction = {
+            this.transactions.push({
                 id: this.transactions.length + 1,
                 userId: account.userId,
                 amount,
                 type: 'deposit',
-            };
-            this.transactions.push(transaction);
+            }); // push directly into array.
         }
     }
 
+    // transfer amount from one account to other.
     transfer(sourceAccountId: number, destinationAccountId: number, amount: number): void {
-        const sourceAccount = this.accounts.find(key => key.id === sourceAccountId);
-        const destinationAccount = this.accounts.find(key => key.id === destinationAccountId);
+        const sourceAccount = this.accounts.find(account => account.userId === sourceAccountId);
+        const destinationAccount = this.accounts.find(account => account.userId === destinationAccountId);
         if (sourceAccount && destinationAccount) {
             if (sourceAccount.balance >= amount) {
                 sourceAccount.balance -= amount;
@@ -116,49 +114,69 @@ class Bank {
         }
     }
 
+    // view list of transactions for any account.
+    viewPassbook(userId: number): Transaction[] {
+        const userTransactions = this.transactions.filter(
+            (transaction) => transaction.userId === userId || (transaction.type === 'transfer' && transaction.userId !== userId)
+        );
+        return userTransactions;
+    }
 
-    viewPassbook(userId: number): void {
-        const user = this.users.find(key => key.id === userId);
-        if (user) {
-            const userTransactions = this.transactions.filter(key => key.userId === userId);
-            if (userTransactions.length > 0) {
-                console.log(`Passbook for User ID: ${userId}`);
-                console.log("Transaction ID | Amount | Type");
-                for (const transaction of userTransactions) {
-                    console.log(`${transaction.id} | ${transaction.amount} | ${transaction.type}`);
-                }
-            } else {
-                console.log("No transactions found for this user.");
-            }
+    // getting current balance for accounts.
+    getBalance(userId: number): number {
+        const account = this.accounts.find(account => account.userId === userId);
+        if (account) {
+            return account.balance;
         } else {
-            console.log("User not found.");
+            console.log("Account not found");
+            return 0;
         }
     }
+
 
 }
 
 // usage example
 const bank = new Bank();
-const user: User = {
+
+// user 1
+const user1: User = {
     id: 1,
     name: "Mark",
     email: "mark@gmail.com",
     password: "1234",
 };
+bank.createUser(user1);
+bank.createAccount(user1.id);
+bank.deposit(1, 1000);
 
-const newUser: User = {
+// user 2
+const user2: User = {
     id: 2,
     name: "John",
     email: "john@gmail.com",
-    password: "1234",
+    password: "4321",
 };
+bank.createUser(user2);
+bank.createAccount(user2.id);
+bank.deposit(2, 1000);
 
-// user1
-bank.createUser(user);
-bank.createAccount(user.id);
-bank.deposit(1, 1000);
-bank.withdraw(1, 500);
-bank.transfer(1, 2, 200);
-bank.viewPassbook(1);
-bank.closeAccount(1);
+// transfer 1000 from user 1 to user 2
+bank.transfer(1, 2, 500);
 
+// // check  if transaction has been recorded.
+// console.log(bank.transactions)
+
+// printing all accounts.
+console.log(bank.accounts)
+
+// getting  balances for both account.
+console.log(`User ID ${user1.id} Balance : ${bank.getBalance(user1.id)}`);
+console.log(`User ID ${user2.id} Balance : ${bank.getBalance(user2.id)}`);
+
+
+// view passbook for user 1
+console.log(bank.viewPassbook(1));
+
+// view passbook for user 2
+console.log(bank.viewPassbook(2));

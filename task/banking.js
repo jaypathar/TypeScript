@@ -1,3 +1,7 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+// importing module.
+var uuid_1 = require("uuid");
 // defining class for different operations
 var Bank = /** @class */ (function () {
     function Bank() {
@@ -5,32 +9,24 @@ var Bank = /** @class */ (function () {
         this.transactions = [];
         this.accounts = [];
     }
+    // creating a user
     Bank.prototype.createUser = function (user) {
-        var newUser = {
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            password: user.password,
-        };
-        this.users.push(newUser);
+        this.users.push(user); // push directly into the array.
     };
-    Bank.prototype.updateUser = function (user) {
-    };
-    Bank.prototype.deleteUser = function (userId) {
-    };
+    // creating an account.
     Bank.prototype.createAccount = function (userId) {
-        var newAccount = {
-            id: this.accounts.length + 1,
-            userId: userId,
-            balance: 0,
-        };
-        this.accounts.push(newAccount);
+        // generating unique id
+        var id = (0, uuid_1.v4)();
+        this.accounts.push({ id: id, userId: userId, balance: 0 });
     };
-    Bank.prototype.closeAccount = function (accountId) {
-        var account = this.accounts.find(function (a) { return a.id === accountId; });
-        if (account) {
+    // close  an account.
+    Bank.prototype.closeAccount = function (userId) {
+        var accountIndex = this.accounts.findIndex(function (account) { return account.userId === userId; });
+        if (accountIndex !== -1) {
+            var account = this.accounts[accountIndex];
             if (account.balance >= 0) {
-                console.log("Account ID ".concat(accountId, " has been closed."));
+                this.accounts.splice(accountIndex, 1);
+                console.log("Account for User ID ".concat(userId, " has been closed."));
             }
             else {
                 console.log("Account balance is negative. Account cannot be closed.");
@@ -40,18 +36,19 @@ var Bank = /** @class */ (function () {
             console.log("Account not found.");
         }
     };
+    // to withdraw amount.
     Bank.prototype.withdraw = function (accountId, amount) {
-        var account = this.accounts.find(function (a) { return a.id === accountId; });
+        var account = this.accounts.find(function (account) { return account.userId === accountId; });
         if (account) {
             if (account.balance >= amount) {
                 account.balance -= amount;
-                var transaction = {
+                this.transactions.push({
                     id: this.transactions.length + 1,
                     userId: account.userId,
                     amount: amount,
                     type: 'withdrawal',
-                };
-                this.transactions.push(transaction);
+                });
+                console.log("$Account :".concat(account.id, " userID : ").concat(account.userId, " Balance: ").concat(account.balance));
             }
             else {
                 console.log("Insufficient balance");
@@ -61,22 +58,23 @@ var Bank = /** @class */ (function () {
             console.log("Account not found");
         }
     };
+    // to  deposit into account.
     Bank.prototype.deposit = function (accountId, amount) {
-        var account = this.accounts.find(function (a) { return a.id === accountId; });
+        var account = this.accounts.find(function (account) { return account.userId === accountId; });
         if (account) {
             account.balance += amount;
-            var transaction = {
+            this.transactions.push({
                 id: this.transactions.length + 1,
                 userId: account.userId,
                 amount: amount,
                 type: 'deposit',
-            };
-            this.transactions.push(transaction);
+            }); // push directly into array.
         }
     };
+    // transfer amount from one account to other.
     Bank.prototype.transfer = function (sourceAccountId, destinationAccountId, amount) {
-        var sourceAccount = this.accounts.find(function (a) { return a.id === sourceAccountId; });
-        var destinationAccount = this.accounts.find(function (a) { return a.id === destinationAccountId; });
+        var sourceAccount = this.accounts.find(function (account) { return account.userId === sourceAccountId; });
+        var destinationAccount = this.accounts.find(function (account) { return account.userId === destinationAccountId; });
         if (sourceAccount && destinationAccount) {
             if (sourceAccount.balance >= amount) {
                 sourceAccount.balance -= amount;
@@ -97,58 +95,56 @@ var Bank = /** @class */ (function () {
             console.log("Account not found");
         }
     };
+    // view list of transactions for any account.
     Bank.prototype.viewPassbook = function (userId) {
-        var user = this.users.find(function (u) { return u.id === userId; });
-        if (user) {
-            var userTransactions = this.transactions.filter(function (t) { return t.userId === userId; });
-            if (userTransactions.length > 0) {
-                console.log("Passbook for User ID: ".concat(userId));
-                console.log("Transaction ID | Amount | Type");
-                for (var _i = 0, userTransactions_1 = userTransactions; _i < userTransactions_1.length; _i++) {
-                    var transaction = userTransactions_1[_i];
-                    console.log("".concat(transaction.id, " | ").concat(transaction.amount, " | ").concat(transaction.type));
-                }
-            }
-            else {
-                console.log("No transactions found for this user.");
-            }
-        }
-        else {
-            console.log("User not found.");
-        }
+        var userTransactions = this.transactions.filter(function (transaction) { return transaction.userId === userId || (transaction.type === 'transfer' && transaction.userId !== userId); });
+        return userTransactions;
     };
-    Bank.prototype.calculateInterest = function (accountId) {
-        var account = this.accounts.find(function (a) { return a.id === accountId; });
+    // getting current balance for accounts.
+    Bank.prototype.getBalance = function (userId) {
+        var account = this.accounts.find(function (account) { return account.userId === userId; });
         if (account) {
-            var balance = account.balance;
-            var interestRate = 0.01; // assuming a fixed interest rate of 1% per year
-            var startDate = new Date(); // assuming interest calculation starts from today
-            var endDate = new Date(); // assuming interest calculation ends today
-            var timeDiff = Math.abs(endDate.getTime() - startDate.getTime());
-            var daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24)); // converting milliseconds to days
-            var interest = balance * (interestRate / 365) * daysDiff; // calculating daily interest
-            var newBalance = balance + interest;
-            account.balance = newBalance;
-            console.log("Interest of ".concat(interest.toFixed(2), " has been added to Account ID ").concat(accountId, ". New balance is ").concat(newBalance.toFixed(2), "."));
+            return account.balance;
         }
         else {
-            console.log("Account not found.");
+            console.log("Account not found");
+            return 0;
         }
     };
     return Bank;
 }());
 // usage example
 var bank = new Bank();
-var user = {
+// user 1
+var user1 = {
     id: 1,
     name: "Mark",
     email: "mark@gmail.com",
     password: "1234",
 };
-bank.createUser(user);
-bank.createAccount(user.id);
+bank.createUser(user1);
+bank.createAccount(user1.id);
 bank.deposit(1, 1000);
-bank.withdraw(1, 500);
-bank.transfer(1, 2, 200);
-bank.viewPassbook(1);
-bank.closeAccount(1);
+// user 2
+var user2 = {
+    id: 2,
+    name: "John",
+    email: "john@gmail.com",
+    password: "4321",
+};
+bank.createUser(user2);
+bank.createAccount(user2.id);
+bank.deposit(2, 1000);
+// transfer 1000 from user 1 to user 2
+bank.transfer(1, 2, 500);
+// // check  if transaction has been recorded.
+// console.log(bank.transactions)
+// printing all accounts.
+console.log(bank.accounts);
+// getting  balances for both account.
+console.log("User ID ".concat(user1.id, " Balance : ").concat(bank.getBalance(user1.id)));
+console.log("User ID ".concat(user2.id, " Balance : ").concat(bank.getBalance(user2.id)));
+// view passbook for user 1
+console.log(bank.viewPassbook(1));
+// view passbook for user 2
+console.log(bank.viewPassbook(2));
