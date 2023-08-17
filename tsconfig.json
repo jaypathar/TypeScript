@@ -1,0 +1,16 @@
+{
+    "compilerOptions": {
+        "esModuleInterop": true,
+        "forceConsistentCasingInFileNames": true,
+        "module": "commonjs",
+        "skipDefaultLibCheck": true,
+        "strict": true,
+        "target": "ES2016",
+        "alwaysStrict": true,
+        
+    },
+    "exclude": [
+        "node_modules"
+    ],
+    "include": ["./typescript intermediate/*"]
+}   
